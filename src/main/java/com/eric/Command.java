@@ -57,16 +57,19 @@ public abstract class Command {
 	/**
 	 * Write to System.out
 	 */
-	protected void out(String msg) {
-		System.out.println(msg);
+	protected void out(String format, Object... args) {
+		System.out.println(String.format(format, args));
 	}
 
-	/**
-	 * Write to System.out if 'verbose' flag is on.
-	 */
-	protected void verbose(String message) {
+	protected void verbose(String format, Object... args) {
 		if (verbose) {
-			out(message);
+			out(format, args);
+		}
+	}
+
+	protected void debug(String format, Object... args) {
+		if (debug) {
+			out(format, args);
 		}
 	}
 
@@ -85,8 +88,17 @@ public abstract class Command {
 	/**
 	 * Write the message to System.err.
 	 */
-	protected void err(String message) {
-		System.err.println(message);
+	protected void err(String format, Object... args) {
+		System.err.println(String.format(format, args));
+	}
+
+	protected void exit(int code) {
+		debug("Exiting with code %s", code);
+		System.exit(code);
+	}
+
+	public String getWorkingDirectory() {
+		return System.getProperty("user.dir");
 	}
 
 	public static void main(Command cmd, String... args) {
@@ -109,12 +121,15 @@ public abstract class Command {
 					}
 
 					jc.usage();
-					System.exit(1);
+					cmd.exit(1);
 				}
 			}
+		} catch (NullPointerException npe) {
+			cmd.err("There was a problem with the program, trying running with the -d option for more details.", npe);
+			cmd.exit(3);
 		} catch (Exception e) {
 			cmd.err(e.getMessage(), e);
-			System.exit(2);
+			cmd.exit(2);
 		}
 	}
 }
